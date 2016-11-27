@@ -7,5 +7,13 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+## Initial Exploration
+```{r}
+df <- read.csv("train.csv")
+time_s <- df %>% dplyr::select(Bankruptcy_Rate) %>% ts()
+plot(time_s)
 ```
 
