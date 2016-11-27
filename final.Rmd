@@ -1,6 +1,6 @@
 ---
 title: "Forecasting National Bankruptcy Rates"
-author: "Evelyn Peng, Sheri Nguyen, Juan Pablo Oberhauser"
+author: "Sheri Nguyen, Juan Pablo Oberhauser, Evelyn Peng"
 date: "November 27, 2016"
 output:
   pdf_document:
@@ -18,11 +18,11 @@ library(ggplot2)
 
 #Problem Description
 
-According to the Office of the Superintendent of Bankruptcy Canada, "The consumer insolvency rate is defined as the number of consumer insolvencies per thousand residents aged 18 years or above." Bankruptcy rates have gained prevalence and importance sine the 2008 economic downturn since most of the issues arising in that time came from unpaid mortgages and the bundling of sub-prime loans that were unpaid. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; According to the Office of the Superintendent of Bankruptcy Canada, "The consumer insolvency rate is defined as the number of consumer insolvencies per thousand residents aged 18 years or above." Bankruptcy rates have gained prevalence and importance sine the 2008 economic downturn since most of the issues arising in that time came from unpaid mortgages and the bundling of sub-prime loans that were unpaid. Being able to accuratlely predict economic indicators is paramount to understand and prepare for many macro- and micro-economic events. 
 
 
 
-Given that most of the bankrupcty filings are caused by economic downturns, it is no surprise that there is seasonality and trend in the data, and it is also not surprising that the largest bankruptcy rates are seen at the end of 2008 and beginning of 2009. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Given that most of the bankrupcty filings are caused by economic downturns, it is no surprise that there is seasonality and trend in the data, and it is also not surprising that the largest bankruptcy rates are seen at the end of 2008 and beginning of 2009. 
 
 
 
@@ -48,7 +48,7 @@ df$Date <-zoo::as.Date(zoo::as.yearmon(sprintf("%06s",as.character(df$Month)), "
 
 
 ```{r, fig.width=12,fig.height=4, fig.cap = "January 2011 – December 2012 bankruptcy rates"}
-ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ")
+ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ") + geom_line(aes(Date, Unemployment_Rate))
 ```
 
 
