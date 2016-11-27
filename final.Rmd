@@ -2,18 +2,43 @@
 title: "Forecasting National Bankruptcy Rates"
 author: "Evelyn Peng, Sheri Nguyen, Juan Pablo Oberhauser"
 date: "November 27, 2016"
-output: pdf_document
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    fig_caption: TRUE
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 library(dplyr)
+library(ggplot2)
 ```
+
+
+##Background Information
+
+According to the Office of the Superintendent of Bankruptcy Canada, "The consumer insolvency rate is defined as the number of consumer insolvencies per thousand residents aged 18 years or above." Given that most of the bankrupcty filings are caused by economic downturns, it is no surprise that there is seasonality and trend in the data, and it is also not surprising that the largest bankruptcy rates are seen at the end of 2008 and beginning of 2009. 
+
 
 ## Initial Exploration
 ```{r}
 df <- read.csv("train.csv")
 time_s <- df %>% dplyr::select(Bankruptcy_Rate) %>% ts()
-plot(time_s)
 ```
 
+```{r}
+##re-format date so we cna plot using ggplot
+df$Date <-zoo::as.Date(zoo::as.yearmon(sprintf("%06s",as.character(df$Month)), "%m%Y"))
+```
+
+
+```{r, fig.width=12,fig.height=4, fig.cap = "January 2011 – December 2012 bankruptcy rates"}
+ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ")
+```
+
+
+As we can see in Figure 1 which shows the original time series of monthly bankruptcy rates in Canada from January 1987- December 2010, we see there is a clear upward trend. Moreover, there is some visual evidence of seasonality and increasing variance or volatility in the banruptcy rates. 
+
+
+## Technical Appendix
