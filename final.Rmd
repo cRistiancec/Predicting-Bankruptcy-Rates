@@ -1,0 +1,11 @@
+---
+title: "Forecasting National Bankruptcy Rates"
+author: "Evelyn Peng, Sheri Nguyen, Juan Pablo Oberhauser"
+date: "November 27, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
