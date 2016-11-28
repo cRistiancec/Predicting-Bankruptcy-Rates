@@ -1,0 +1,211 @@
+---
+title: "Final Method chosen"
+author: "Evelyn Peng"
+date: "November 27, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(ggplot2)
+library("tseries")
+library(forecast)
+library(lawstat)
+```
+
+
+```{r cars}
+df <- read.csv("train.csv")
+time_s <- df %>% dplyr::select(Bankruptcy_Rate) %>% ts()
+
+##re-format date so we cna plot using ggplot
+df$Date <-zoo::as.Date(zoo::as.yearmon(sprintf("%06s",as.character(df$Month)), "%m%Y"))
+
+# ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ") + geom_line(aes(Date, Unemployment_Rate))
+```
+
+## ARIMA model
+
+### Check for non-constant variance and apply suitable transformation
+
+Plot time series data and ACF to see if the data is stationary. We found a log transformation is needed.
+
+```{r}
+par(mfrow=c(2,1))
+plot(log(df$Bankruptcy_Rate))
+acf(log(df$Bankruptcy_Rate), lag.max = 48)
+test <- adf.test(log(df$Bankruptcy_Rate))
+print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
+```
+
+### Check for seasonal or non-seasonal trend
+
+We found the ACF showing undesirable slow decay indicating the data has a trend. And formal test, Augmented Dicky-Fuller, also support this observation with p-value = 0.3859. We should not reject the null hypothesis that the time series data is not stationary. To stable the time series, we begin with ordinary difference to minimize the trend. We then difference the data until the transformed time series looks flat.
+
+```{r}
+# The raw time series is clearly not stationary. Try differencing once:
+BR1 <- diff(log(df$Bankruptcy_Rate))
+plot(BR1, ylab = "BR1")
+acf(BR1, lag.max = 48)
+test <- adf.test(BR1)
+print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
+```
+
+The Bankruptcy Rate passed Dickey-Fuller test after difference once. The data is now stationary without trend and we need to eliminate seasonality next. 
+
+```{r}
+# There still seems to be monthly seasonality (period = 12). Let's try differencing for that.
+BR1.12 <- diff(BR1, lag = 12)
+plot(BR1.12)
+acf(BR1.12, lag.max = 48)
+```
+
+ACF plots looks better after seasonal difference once. The peaks between two cycle decay rapidly. We then use auto.arima to check if using library will give the same result. 
+
+```{r}
+auto.arima(log(df$Bankruptcy_Rate), allowdrift = F)
+nsdiffs(log(df$Bankruptcy_Rate), m=12)
+```
+
+### Identify (p,q,P,Q) according to ACF/PACF plots
+
+Even though auto.arima diagnose the data should perform without seasonality, we could still see a clear seasonal cycle in the data. We will process with ordinary difference with once and seasonal difference with twice. From the acf plot of the final different-ed data, the candidate q is between 1 and 7. The possible range of p is 1 and 8. And P, Q both could fall in 0 to 2.
+
+```{r}
+par(mfrow=c(2,1))
+acf(BR1.12, lag.max = 48)
+pacf(BR1.12, lag.max=48)
+
+AIC <- 9999999
+sigma <- 9999999
+final <- list(0,0,0,0)
+
+# for (p in 0:8){
+#   for (q in 0:7){
+#     for (P in 0:2){
+#       for (Q in 0:2){
+#         try({
+#           m.ml <- arima(log(df$Bankruptcy_Rate), order = c(p,1,q), seasonal = list(order = c(P,1,Q), period = 12), method = "CSS-ML")
+#           cat(sprintf("\"%d\" \"%d\" \"%d\ \"%d\ \n", p, q, P, Q))
+#           print(m.ml$aic)
+#           if (m.ml$aic < AIC) {
+#             AIC <- m.ml$aic
+#             final[1] <- p
+#             final[2] <- q
+#             final[3] <- P
+#             final[4] <- Q
+#           }})
+#       }
+#     }
+#   }
+# }
+
+```
+
+### Fit propsed model and iterate to the optimal model
+
+(Using nested for loop) [should not included in the final report], (p,q,P,Q) with value (8,2,1,2) has the lowest AIC value, this servers as our first candidate model. And (6, 5, 2, 2) server as our second candidate model. 
+
+```{r}
+m1 <- arima(log(df$Bankruptcy_Rate), order = c(6,1,5), seasonal = list(order = c(2,1,2), period = 12), method = "CSS-ML")
+m2 <- arima(log(df$Bankruptcy_Rate), order = c(7,1,2), seasonal = list(order = c(0,1,2), period = 12), method = "CSS-ML")
+m3 <- arima(log(df$Bankruptcy_Rate), order = c(7,1,3), seasonal = list(order = c(1,1,1), period = 12), method = "CSS-ML")
+m4 <- arima(log(df$Bankruptcy_Rate), order = c(8,1,2), seasonal = list(order = c(1,1,2), period = 12), method = "CSS-ML")
+```
+
+
+|  | (6,1,5)X(2,1,2) | (7,1,2)X(0,1,2) | (7,1,3)X(1,1,1) | (8,1,2)X(1,1,2) |
+|------------------|-----------------|-----------------|-----------------|-----------------|
+| $\hat{\sigma}^2$ | 0.003256 | 0.00333 | 0.003299 | 0.003257 |
+| log likelihood | 385.86 | 381.7 | 382.54 | 384.43 |
+| AIC | -739.7 | -739.4 | -739.0 | -740.8 |
+
+### Check fit with residual assumption or not
+
+From the comparison table, we could clearly confirm the first model perform better than the otheres. Although the AIC is not the smallest among these four models, but it has least $\hat{\sigma}^2$ and largest log likelihood value. And it only traded off AIC for less than 0.1. We therefore choose the parameter of arima model (6,1,5)X(2,1,2) accordingly. With the candidate model arima (6,1,5)X(2,1,2), we start checking if it satisfy the formal and informal residual diagnostics.
+
+i. Zero-Mean
+
+```{r}
+e <- m1$residuals # residuals
+r <- e/sqrt(m1$sigma2) # standardized residuals 
+par(mfrow=c(2,1))
+plot(e, main="Residuals vs t", ylab="")
+abline(h=0, col="red")
+plot(r, main="Standardized Residuals vs t", ylab="") 
+abline(h=0, col="red")
+
+# test whether residuals have zero mean
+test <- t.test(e) # do ont reject null hypothese, the mean is 0
+print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
+```
+
+From the plot of standardized residuals and time t, we see no obvious above or below 0. And the one sample t-test gave p-value = 0.8001 indicating we should not reject the null hypotheses. The true mean is equal to 0 with more than 95 percent confidence level. 
+
+ii. Homoscedasticity
+
+```{r}
+# test for heteroscedasticity
+par(mfrow=c(1,1))
+plot(e, main="Residuals vs t", ylab="")
+#group the data, to see if the variance is the same
+abline(v=c(100, 200), lwd=3, col="red")
+#group the data, to see if the variance is the same
+group <- c(rep(1,100),rep(2,100),rep(3,88))
+test <- levene.test(e,group)
+print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
+#Levene rejects null hypothesis, h0 = all variance are not the same
+test <- bartlett.test(e,group) #Bartlett
+print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
+```
+
+From the plot of standardized residuals and time t, we see no obvious differences variance between groups. I divided the group by 3. The variance stays constant for all the groups. And both levene test (0.6463) and Bartlett test (0.3828) gave p-value more than 0.3, indicating we should not reject the null hypothesis that all variance are the same across groups. 
+
+iii. Zero-Correlation 
+
+```{r}
+# test for uncorrelatedness / randomness
+tsdiag(m1, gof.lag = 50)
+```
+
+The function tsdiag give the graph of ACF and Ljung-Box test all in one! From the ACF plots, it shows the residuals' are uncorrelated (only one spikes at 0 and no spikes afterwards) and for formal test of correlation, Ljung-Box test, all the p-value are larger than the critical value and we should not reject the null hypothesis that all correlations are equal to 0 because all the p value is above the confidence interval. The residuals do not have correlation for all lags.
+
+iv. Normality
+
+```{r}
+# test for normality
+par(mfrow=c(1,1))
+qqnorm(e, main="QQ-plot of Residuals") #seems quite good
+qqline(e, col = "red")
+test <- shapiro.test(e) #SW test, reject null
+print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
+```
+
+The qqplot seems quite good, the empirical dots lies on the theoretical normal distribution line. And the formal test for normality-shapiro test, gave a p-value = 0.1755 suggesting not reject the null hypothesis. The residuals are normally distributed.
+
+## Exponential smoothing (Holt-Winters Methods)
+From previous diagnosis, we found there are trend and seasonality in these data. Therefore, we adapt Triple Exponential Something method with multiple effect (apply on heteroskedastic data). However, after trying four different types of Holt-Winter method, there is no sign of seasonality. We cannot use Exponential Smoothing to predict future bankruptcy rates.
+
+```{r}
+par(mfrow = c(2,1))
+plot(forecast(HoltWinters(x = log(df$Bankruptcy_Rate), beta = F, gamma = F), h = 60)) # no trend no seasonal
+plot(forecast(HoltWinters(x = log(df$Bankruptcy_Rate), gamma = F), h = 60)) # no seasonal
+# plot(forecast(HoltWinters(x = log(df$Bankruptcy_Rate), seasonal = "add"), h = 60)) 
+# plot(forecast(HoltWinters(x = log(df$Bankruptcy_Rate), seasonal = "mult"), h = 60)) # is better then additive becase it increase the varibility with time
+```
+
+
+```{r}
+# Triple Exponential Smoothing -- Multiplicative
+# par(mfrow = c(1,1))
+# plot(AirPassengers, main = "National Bankruptcy rates", ylab = "Bankruptcy Rate", xlab = "Time")
+# hw.AP <- HoltWinters(x = log(df$Bankruptcy_Rate), seasonal = "mult") 
+# par(mfrow = c(2,1))
+# plot(hw.AP)
+# plot(forecast(hw.AP, h = 60))
+```
+
+
+
