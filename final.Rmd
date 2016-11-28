@@ -18,41 +18,61 @@ library(ggplot2)
 
 #Problem Description
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; According to the Office of the Superintendent of Bankruptcy Canada, "The consumer insolvency rate is defined as the number of consumer insolvencies per thousand residents aged 18 years or above." Bankruptcy rates have gained prevalence and importance sine the 2008 economic downturn since most of the issues arising in that time came from unpaid mortgages and the bundling of sub-prime loans that were unpaid. Being able to accuratlely predict economic indicators is paramount to understand and prepare for many macro- and micro-economic events. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; According to the Office of the Superintendent of Bankruptcy Canada, "The consumer insolvency rate is defined as the number of consumer insolvencies per thousand residents aged 18 years or above." Bankruptcy rates have gained prevalence and importance sine the 2008 economic downturn since most of the issues arising in that time came from unpaid mortgages and the bundling of sub-prime loans that were unpaid. Being able to accurately predict economic indicators is paramount to understand and prepare for many macro- and micro-economic events. 
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; In the following sections, we will utilize bankruptcy rates from the country of Canada from January 1987 to December 2010 to forecast this same economic indicator into the future. Figure 1 below showcases said economic indicator through time. We can see that the indicator is volatile, has a clear upward trend, has some spikes (likely due to external economic factors), and could have some seasonality. 
 
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Given that most of the bankrupcty filings are caused by economic downturns, it is no surprise that there is seasonality and trend in the data, and it is also not surprising that the largest bankruptcy rates are seen at the end of 2008 and beginning of 2009. 
-
-
-
-
-#Methods to Solve Problem
-
-#Final Method chosen 
-
-# Results
-
-
-
-## Initial Exploration
 ```{r}
 df <- read.csv("train.csv")
 time_s <- df %>% dplyr::select(Bankruptcy_Rate) %>% ts()
-```
-
-```{r}
-##re-format date so we cna plot using ggplot
+##re-format date so we can plot using ggplot
 df$Date <-zoo::as.Date(zoo::as.yearmon(sprintf("%06s",as.character(df$Month)), "%m%Y"))
 ```
 
 
 ```{r, fig.width=12,fig.height=4, fig.cap = "January 2011 – December 2012 bankruptcy rates"}
-ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ") + geom_line(aes(Date, Unemployment_Rate))
+ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ") 
 ```
 
 
-As we can see in Figure 1 which shows the original time series of monthly bankruptcy rates in Canada from January 1987- December 2010, we see there is a clear upward trend. Moreover, there is some visual evidence of seasonality and increasing variance or volatility in the banruptcy rates. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Given that most of the bankruptcy filings are caused by economic downturns, it is no surprise that there is seasonality and trend in the data, and it is also not surprising that the largest bankruptcy rates are seen at the end of 2008 and beginning of 2009. Also, some of the largest overall increases in bankruptcy rates are seen around 1990, 1995, and 2008, all years of very bad economic performance. 
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Knowing that there is an intricate realtionship between the indicator we will be trying to predict and several other economic factors, it could be important to analyze other economic indicators. Some of those are given in the train data. These include Unemployment Rate, Population, and the Housing Price Index. 
+
+
+#Methods to Solve Problem
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The main idea behind the approach to solve the problem of forecasting bankruptcy rates into the future is to exploit the fact that the bankruptcy rate tomorrow is very likely to be similar to that of today. Similarly, we can exploit the fact that the rate today is likely to be very similar to that of yesterday. Furthemore, we can exploit other relationships in the data to gain insights into the future like the fact that bankruptcy rates in July tend to go up or that every January sees a decline in bakruptcy rates. We will now use plots and other metrics to see which are these kinds of relationships in the data and once we extract them, use them to predict into the future. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Furthermore, we can use other data that highly correlates to bankruptcy rates as external regressors. For example, if we know from economic theory that bankruptcy rates spike after people have a hard time paying off their debt, we can use other indicators like the House Price Index to tell us whether the bankrupcty rates are likely to go up or down when the House Price Index moves up or down. We will further explore these extrenal regressors in the Final Method section to see if they should be included in a model to predict future bankruptcy rates. 
+
+## External Regressors
+
+
+```{r, fig.width=12,fig.height=4, fig.cap="Possible External Regressors"}
+ggplot(df, aes(Date)) + 
+  geom_line(aes(y = scale(Bankruptcy_Rate), colour = "Bankruptcy Rate")) + 
+  geom_line(aes(y = scale(Unemployment_Rate), colour = "Unemployment Rate"))+
+        geom_line(aes(y = scale(Population),
+                      colour = "Population"))+geom_line(aes(y =scale(House_Price_Index),
+                                                                   colour = "House Price Index")) + 
+        ggtitle("Possible External Regressors") + ylab("Scaled Variables")
+```
+
+
+#Final Method Chosen 
+
+# Results
+
+
+
+
+
+As we can see in Figure 1 which shows the original time series of monthly bankruptcy rates in Canada from January 1987- December 2010, we see there is a clear upward trend. Moreover, there is some visual evidence of seasonality and increasing variance or volatility in the bankruptcy rates. 
 
 
 ## Technical Appendix
+
+## Bibliography
+
