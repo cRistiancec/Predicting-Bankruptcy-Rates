@@ -20,13 +20,12 @@ library(ggplot2)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; According to the Office of the Superintendent of Bankruptcy Canada, "The consumer insolvency rate is defined as the number of consumer insolvencies per thousand residents aged 18 years or above." Bankruptcy rates have gained prevalence and importance sine the 2008 economic downturn since most of the issues arising in that time came from unpaid mortgages and the bundling of sub-prime loans that were unpaid. Being able to accurately predict economic indicators is paramount to understand and prepare for many macro- and micro-economic events. 
 
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; We are to utilize bankruptcy rates from the country of Canada from January 1987 to December 2010 to try and forecast this same economic indicator into the future. Figure 1 below showcases said economic indicator through time. We can see that the indicator is volatile, has a clear upward trend, has some spikes (likely due to external economic factors), and could have some seasonality. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; In the following sections, we will utilize bankruptcy rates from the country of Canada from January 1987 to December 2010 to forecast this same economic indicator into the future. Figure 1 below showcases said economic indicator through time. We can see that the indicator is volatile, has a clear upward trend, has some spikes (likely due to external economic factors), and could have some seasonality. 
 
 ```{r}
 df <- read.csv("train.csv")
 time_s <- df %>% dplyr::select(Bankruptcy_Rate) %>% ts()
-##re-format date so we cna plot using ggplot
+##re-format date so we can plot using ggplot
 df$Date <-zoo::as.Date(zoo::as.yearmon(sprintf("%06s",as.character(df$Month)), "%m%Y"))
 ```
 
@@ -39,6 +38,7 @@ ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankrup
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Given that most of the bankruptcy filings are caused by economic downturns, it is no surprise that there is seasonality and trend in the data, and it is also not surprising that the largest bankruptcy rates are seen at the end of 2008 and beginning of 2009. Also, some of the largest overall increases in bankruptcy rates are seen around 1990, 1995, and 2008, all years of very bad economic performance. 
 
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Knowing that there is an intricate realtionship between the indicator we will be trying to predict and several other economic factors, it could be important to analyze other economic indicators. Some of those are given in the train data. These include Unemployment Rate, Population, and the Housing Price Index. 
 
 
 #Methods to Solve Problem
@@ -49,10 +49,16 @@ ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankrup
 
 ## External Regressors
 
-```{r, fig.width=12,fig.height=4, fig.cap = "Scaled Bankruptcy & Unemployment Rates"}
-ggplot(df, aes(Date, scale(Bankruptcy_Rate))) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Scaled Bankruptcy & Unemployment Rates") + geom_line(aes(Date, scale(Unemployment_Rate)), colour="red")
-```
 
+```{r, fig.width=12,fig.height=4, fig.cap="Possible External Regressors"}
+ggplot(df, aes(Date)) + 
+  geom_line(aes(y = scale(Bankruptcy_Rate), colour = "Bankruptcy Rate")) + 
+  geom_line(aes(y = scale(Unemployment_Rate), colour = "Unemployment Rate"))+
+        geom_line(aes(y = scale(Population),
+                      colour = "Population"))+geom_line(aes(y =scale(House_Price_Index),
+                                                                   colour = "House Price Index")) + 
+        ggtitle("Possible External Regressors") + ylab("Scaled Variables")
+```
 
 
 #Final Method Chosen 
@@ -67,3 +73,6 @@ As we can see in Figure 1 which shows the original time series of monthly bankru
 
 
 ## Technical Appendix
+
+## Bibliography
+
