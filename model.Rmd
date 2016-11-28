@@ -23,10 +23,14 @@ time_s <- df %>% dplyr::select(Bankruptcy_Rate) %>% ts()
 ##re-format date so we cna plot using ggplot
 df$Date <-zoo::as.Date(zoo::as.yearmon(sprintf("%06s",as.character(df$Month)), "%m%Y"))
 
-ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ") + geom_line(aes(Date, Unemployment_Rate))
+# ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ") + geom_line(aes(Date, Unemployment_Rate))
 ```
 
-Plot time series data and ACF to see if the data is stationary. 
+## ARIMA model
+
+### Check for non-constant variance and apply suitable transformation
+
+Plot time series data and ACF to see if the data is stationary. We found a log transformation is needed.
 
 ```{r}
 par(mfrow=c(2,1))
@@ -35,6 +39,8 @@ acf(log(df$Bankruptcy_Rate), lag.max = 48)
 test <- adf.test(log(df$Bankruptcy_Rate))
 print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
 ```
+
+### Check for seasonal or non-seasonal trend
 
 We found the ACF showing undesirable slow decay indicating the data has a trend. And formal test, Augmented Dicky-Fuller, also support this observation with p-value = 0.3859. We should not reject the null hypothesis that the time series data is not stationary. To stable the time series, we begin with ordinary difference to minimize the trend. We then difference the data until the transformed time series looks flat.
 
@@ -63,6 +69,7 @@ auto.arima(log(df$Bankruptcy_Rate), allowdrift = F)
 nsdiffs(log(df$Bankruptcy_Rate), m=12)
 ```
 
+### Identify (p,q,P,Q) according to ACF/PACF plots
 
 Even though auto.arima diagnose the data should perform without seasonality, we could still see a clear seasonal cycle in the data. We will process with ordinary difference with once and seasonal difference with twice. From the acf plot of the final different-ed data, the candidate q is between 1 and 7. The possible range of p is 1 and 8. And P, Q both could fall in 0 to 2.
 
@@ -97,6 +104,8 @@ final <- list(0,0,0,0)
 
 ```
 
+### Fit propsed model and iterate to the optimal model
+
 (Using nested for loop) [should not included in the final report], (p,q,P,Q) with value (8,2,1,2) has the lowest AIC value, this servers as our first candidate model. And (6, 5, 2, 2) server as our second candidate model. 
 
 ```{r}
@@ -112,6 +121,8 @@ m4 <- arima(log(df$Bankruptcy_Rate), order = c(8,1,2), seasonal = list(order = c
 | $\hat{\sigma}^2$ | 0.003256 | 0.00333 | 0.003299 | 0.003257 |
 | log likelihood | 385.86 | 381.7 | 382.54 | 384.43 |
 | AIC | -739.7 | -739.4 | -739.0 | -740.8 |
+
+### Check fit with residual assumption or not
 
 From the comparison table, we could clearly confirm the first model perform better than the otheres. Although the AIC is not the smallest among these four models, but it has least $\hat{\sigma}^2$ and largest log likelihood value. And it only traded off AIC for less than 0.1. We therefore choose the parameter of arima model (6,1,5)X(2,1,2) accordingly. With the candidate model arima (6,1,5)X(2,1,2), we start checking if it satisfy the formal and informal residual diagnostics.
 
