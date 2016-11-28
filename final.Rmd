@@ -21,7 +21,7 @@ library(ggplot2)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; According to the Office of the Superintendent of Bankruptcy Canada, "The consumer insolvency rate is defined as the number of consumer insolvencies per thousand residents aged 18 years or above." Bankruptcy rates have gained prevalence and importance sine the 2008 economic downturn since most of the issues arising in that time came from unpaid mortgages and the bundling of sub-prime loans that were unpaid. Being able to accurately predict economic indicators is paramount to understand and prepare for many macro- and micro-economic events. 
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; We are to utilize bankruptcy rates from the country of Canada from January 1987 to December 2010 to try and forecast this same economic indicator into the future. Figure 1 below showcases said economic indicator through time. We can see that the indicator is volatile, has a clear upward trend, has some spikes (likely due to external economic )
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; We are to utilize bankruptcy rates from the country of Canada from January 1987 to December 2010 to try and forecast this same economic indicator into the future. Figure 1 below showcases said economic indicator through time. We can see that the indicator is volatile, has a clear upward trend, has some spikes (likely due to external economic factors), and could have some seasonality. 
 
 ```{r}
 df <- read.csv("train.csv")
@@ -36,7 +36,7 @@ ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankrup
 ```
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Given that most of the bankruptcy filings are caused by economic downturns, it is no surprise that there is seasonality and trend in the data, and it is also not surprising that the largest bankruptcy rates are seen at the end of 2008 and beginning of 2009. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Given that most of the bankruptcy filings are caused by economic downturns, it is no surprise that there is seasonality and trend in the data, and it is also not surprising that the largest bankruptcy rates are seen at the end of 2008 and beginning of 2009. Also, some of the largest overall increases in bankruptcy rates are seen around 1990, 1995, and 2008, all years of very bad economic performance. 
 
 
 
