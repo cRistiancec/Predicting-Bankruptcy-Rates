@@ -18,11 +18,22 @@ library(lawstat)
 
 ```{r cars}
 df <- read.csv("train.csv")
+testdf <- read.csv("test.csv")
+
+test_Unemployment_Rate <- ts(testdf$Unemployment_Rate, start = c(1987, 1))
+test_House_Price_Index <- ts(testdf$House_Price_Index, start = c(1987, 1))
+
 time_s <- df %>% dplyr::select(Bankruptcy_Rate) %>% ts()
 
 ##re-format date so we cna plot using ggplot
 df$Date <-zoo::as.Date(zoo::as.yearmon(sprintf("%06s",as.character(df$Month)), "%m%Y"))
 
+df_validation <- df[231:288,]
+df <- df[1:230,]
+Bankruptcy_Rate <- ts(df$Bankruptcy_Rate, start = c(1987, 1))
+Unemployment_Rate <- ts(df$Unemployment_Rate, start = c(1987, 1))
+Population <- ts(df$Population, start = c(1987, 1))
+House_Price_Index <- ts(df$House_Price_Index, start = c(1987, 1))
 # ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankruptcy Rates") + ggtitle("Canadian Bankruptcy Rates ") + geom_line(aes(Date, Unemployment_Rate))
 ```
 
@@ -42,7 +53,7 @@ print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,
 
 ### Check for seasonal or non-seasonal trend
 
-We found the ACF showing undesirable slow decay indicating the data has a trend. And formal test, Augmented Dicky-Fuller, also support this observation with p-value = 0.3859. We should not reject the null hypothesis that the time series data is not stationary. To stable the time series, we begin with ordinary difference to minimize the trend. We then difference the data until the transformed time series looks flat.
+We found the ACF showing undesirable slow decay indicating the data has a trend. And formal test, Augmented Dicky-Fuller, also support this observation with p-value = 0.845. We should not reject the null hypothesis that the time series data is not stationary. To stable the time series, we begin with ordinary difference to minimize the trend. We then difference the data until the transformed time series looks flat.
 
 ```{r}
 # The raw time series is clearly not stationary. Try differencing once:
@@ -118,9 +129,9 @@ m4 <- arima(log(df$Bankruptcy_Rate), order = c(8,1,2), seasonal = list(order = c
 
 |  | (6,1,5)X(2,1,2) | (7,1,2)X(0,1,2) | (7,1,3)X(1,1,1) | (8,1,2)X(1,1,2) |
 |------------------|-----------------|-----------------|-----------------|-----------------|
-| $\hat{\sigma}^2$ | 0.003256 | 0.00333 | 0.003299 | 0.003257 |
-| log likelihood | 385.86 | 381.7 | 382.54 | 384.43 |
-| AIC | -739.7 | -739.4 | -739.0 | -740.8 |
+| $\hat{\sigma}^2$ | 0.003402 | 0.003367 | 0.003367 | 0.003342 |
+| log likelihood | 298.64 | 298.64 | 298.46 | 299.75 |
+| AIC | -560.28 | -573.28 | -570.93 | -571.5 |
 
 ### Check fit with residual assumption or not
 
@@ -142,7 +153,7 @@ test <- t.test(e) # do ont reject null hypothese, the mean is 0
 print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
 ```
 
-From the plot of standardized residuals and time t, we see no obvious above or below 0. And the one sample t-test gave p-value = 0.8001 indicating we should not reject the null hypotheses. The true mean is equal to 0 with more than 95 percent confidence level. 
+From the plot of standardized residuals and time t, we see no obvious above or below 0. And the one sample t-test gave p-value = 0.529 indicating we should not reject the null hypotheses. The true mean is equal to 0 with more than 95 percent confidence level. 
 
 ii. Homoscedasticity
 
@@ -151,9 +162,9 @@ ii. Homoscedasticity
 par(mfrow=c(1,1))
 plot(e, main="Residuals vs t", ylab="")
 #group the data, to see if the variance is the same
-abline(v=c(100, 200), lwd=3, col="red")
+abline(v=c(80, 160), lwd=3, col="red")
 #group the data, to see if the variance is the same
-group <- c(rep(1,100),rep(2,100),rep(3,88))
+group <- c(rep(1,80),rep(2,80),rep(3,70))
 test <- levene.test(e,group)
 print(c("Test Statistic:",round(test$statistic,4),"P-value:",round(test$p.value,4)))
 #Levene rejects null hypothesis, h0 = all variance are not the same
@@ -167,7 +178,7 @@ iii. Zero-Correlation
 
 ```{r}
 # test for uncorrelatedness / randomness
-tsdiag(m1, gof.lag = 50)
+tsdiag(m1, gof.lag = 40)
 ```
 
 The function tsdiag give the graph of ACF and Ljung-Box test all in one! From the ACF plots, it shows the residuals' are uncorrelated (only one spikes at 0 and no spikes afterwards) and for formal test of correlation, Ljung-Box test, all the p-value are larger than the critical value and we should not reject the null hypothesis that all correlations are equal to 0 because all the p value is above the confidence interval. The residuals do not have correlation for all lags.
@@ -188,7 +199,7 @@ The qqplot seems quite good, the empirical dots lies on the theoretical normal d
 ## Exponential smoothing (Holt-Winters Methods)
 From previous diagnosis, we found there are trend and seasonality in these data. Therefore, we adapt Triple Exponential Something method with multiple effect (apply on heteroskedastic data). However, after trying four different types of Holt-Winter method, there is no sign of seasonality. We cannot use Exponential Smoothing to predict future bankruptcy rates.
 
-```{r}
+```{r, eval=FALSE}
 par(mfrow = c(2,1))
 plot(forecast(HoltWinters(x = log(df$Bankruptcy_Rate), beta = F, gamma = F), h = 60)) # no trend no seasonal
 plot(forecast(HoltWinters(x = log(df$Bankruptcy_Rate), gamma = F), h = 60)) # no seasonal
@@ -197,15 +208,111 @@ plot(forecast(HoltWinters(x = log(df$Bankruptcy_Rate), gamma = F), h = 60)) # no
 ```
 
 
-```{r}
+```{r, eval=FALSE}
+# Double Exponential Smoothing
+m5 <- HoltWinters(x = log(df$Bankruptcy_Rate), gamma = F)
+par(mfrow = c(2,1))
+plot(m5)
+plot(forecast(m5, h = 58))
+
 # Triple Exponential Smoothing -- Multiplicative
 # par(mfrow = c(1,1))
-# plot(AirPassengers, main = "National Bankruptcy rates", ylab = "Bankruptcy Rate", xlab = "Time")
+# plot(log(df$Bankruptcy_Rate), main = "National Bankruptcy rates", ylab = "Bankruptcy Rate", xlab = "Time")
 # hw.AP <- HoltWinters(x = log(df$Bankruptcy_Rate), seasonal = "mult") 
 # par(mfrow = c(2,1))
 # plot(hw.AP)
 # plot(forecast(hw.AP, h = 60))
 ```
+
+## ARIMAX
+
+Considering there are external time series influences the bankruptcy rate, we take into account their effection when building the model by multivariate time seriese model. First, we start with ARIMA model. Continue using what we got earlier from SARIMA model, we fit in the data with parameter of arima model (6,1,5)X(2,1,2) and other time series: unemployment rate, population and house price index. Comparing all the combination of these three additonal predictors, the one with unemployment rate and house price index has the least AIC among all candidates. However, the AIC is bigger than the one without using external time series variables. As ARIMAX model address on the situation when these external variables are exougenous, this might not fit with our data as these variables might influence bankruptcy rate and bankruptcy rate would influnce these variables too.
+
+```{r, eval=FALSE}
+m6 <- arima(log(df$Bankruptcy_Rate), order = c(6,1,5), seasonal = list(order = c(2,1,2), period = 12), method = "CSS-ML", xreg = data.frame(Unemployment_Rate))
+# m6 <- arima(log(df$Bankruptcy_Rate), order = c(6,1,5), seasonal = list(order = c(2,1,2), period = 12), method = "CSS-ML", xreg = data.frame(Population))
+m7 <- arima(log(df$Bankruptcy_Rate), order = c(6,1,5), seasonal = list(order = c(2,1,2), period = 12), method = "CSS-ML", xreg = data.frame(House_Price_Index))
+m8 <- arima(log(df$Bankruptcy_Rate), order = c(6,1,5), seasonal = list(order = c(2,1,2), period = 12), method = "CSS-ML", xreg = data.frame(log(Unemployment_Rate), log(House_Price_Index)))
+
+summary(m8)
+tsdiag(m8)
+
+plot(forecast(m8, h =24, xreg = data.frame(test_Unemployment_Rate, test_House_Price_Index)))
+
+# Let's see what auto.arima suggests 
+# it still suggest not using seasonal, but the AIC is not as small as using seasonal modeling
+m.x <-  auto.arima(log(df$Bankruptcy_Rate), xreg = data.frame(Unemployment_Rate, House_Price_Index))
+summary(m.x)
+tsdiag(m.x)
+```
+
+## VAR
+
+It's valid to assume these external variables are endogenous, we then use vetor autoregression model to fit our data as next step. Using Akaike Information Criterion, Hannan-Quinn Criterion, Schwarz criterion and Akaike’s Final Prediction Error Criterion, we choose p equals to 6 as this is the smallest number Schwarz criterion suggests. We should keep our model as simple as possible. 
+
+```{r, eval=FALSE}
+library(vars)
+# What order p should we use? 
+VARselect(data.frame(Bankruptcy_Rate, Unemployment_Rate, House_Price_Index, Population)) 
+
+# SC sugget p = 6 which is the lowest one
+m9 <- VAR(y = data.frame(Bankruptcy_Rate, Unemployment_Rate, House_Price_Index, Population), p = 6)
+#plot(m9)
+
+# Let's now do some forecasting with this model
+pred <- predict(m9, n.ahead = 35, ci = 0.95)
+#plot(pred)
+```
+
+## Final model choosing
+
+Using RMSE to compare above four models: ARIMA, Exponential smoothing, ARIMAX and VAR. The RMSE was calculated based on the validation data which is that last 20% of training data. We conclude the ARIMA model is our final choose because it has the lowest RMSE among four models.
+
+|  | ARIMA | Exponential Smoothing | ARIMAX | VAR |
+|------|-------------|-----------------------|------------|--------|
+| RMSE | 0.006506753 | 0.01333646 | 0.03077996 | 1.000244 |
+
+```{r, eval=FALSE}
+library(forecast)
+summary(m1)
+summary(m5)
+summary(m8)
+summary(m9)
+
+m1_forecast <-forecast(m1,h=58,level=0.95)
+m1_predictions <- exp(m1_forecast$mean)
+m1_RMSE<- sqrt(mean((df_validation$Bankruptcy_Rate - m1_predictions)**2))
+m1_RMSE
+
+m5_forecast <-forecast(m5,h=58,level=0.95)
+m5_predictions <- exp(m5_forecast$mean)
+m5_RMSE<- sqrt(mean((df_validation$Bankruptcy_Rate - m5_predictions)**2))
+m5_RMSE
+
+m8_forecast <-forecast(m8,h=58,level=0.95, xreg = data.frame(df_validation$Unemployment_Rate, df_validation$House_Price_Index))
+m8_predictions <- exp(m8_forecast$mean)
+m8_RMSE<- sqrt(mean((df_validation$Bankruptcy_Rate - m8_predictions)**2))
+m8_RMSE
+
+m9_forecast <- predict(m9, n.ahead = 58, ci = 0.95)
+m9_predictions <- exp(m9_forecast$fcst$Bankruptcy_Rate[,1])
+m9_RMSE <- sqrt(mean((df_validation$Bankruptcy_Rate - m9_predictions)**2))
+m9_RMSE
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
