@@ -1,7 +1,7 @@
 ---
 title: "Forecasting National Bankruptcy Rates"
 author: "Sheri Nguyen, Juan Pablo Oberhauser, Evelyn Peng"
-date: "November 27, 2016"
+date: "December 13, 2016"
 output:
   pdf_document:
     toc: true
@@ -45,10 +45,12 @@ ggplot(df, aes(Date, Bankruptcy_Rate)) + geom_line()  + xlab("") + ylab("Bankrup
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The main idea behind the approach to solve the problem of forecasting bankruptcy rates into the future is to exploit the fact that the bankruptcy rate tomorrow is very likely to be similar to that of today. Similarly, we can exploit the fact that the rate today is likely to be very similar to that of yesterday. Furthemore, we can exploit other relationships in the data to gain insights into the future like the fact that bankruptcy rates in July tend to go up or that every January sees a decline in bakruptcy rates. We will now use plots and other metrics to see which are these kinds of relationships in the data and once we extract them, use them to predict into the future. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Furthermore, we can use other data that highly correlates to bankruptcy rates as external regressors. For example, if we know from economic theory that bankruptcy rates spike after people have a hard time paying off their debt, we can use other indicators like the House Price Index to tell us whether the bankrupcty rates are likely to go up or down when the House Price Index moves up or down. We will further explore these extrenal regressors in the Final Method section to see if they should be included in a model to predict future bankruptcy rates. 
 
-## External Regressors
+## External Regressors Approach
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; One approach is to use other data that highly correlates to bankruptcy rates as external regressors. For example, if we know from economic theory that bankruptcy rates spike after people have a hard time paying off their debt, we can use other indicators like the House Price Index to tell us whether the bankrupcty rates are likely to go up or down when the House Price Index moves up or down. We will further explore these extrenal regressors in the Final Method section to see if they should be included in a model to predict future bankruptcy rates. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;It is important to remember that when adding external regressors, we want to keep the number of variables as small as posssible to keep the complexity of the model down and the number of parameters to estimate small as well. 
 
 ```{r, fig.width=12,fig.height=4, fig.cap="Possible External Regressors"}
 ggplot(df, aes(Date)) + 
@@ -60,6 +62,18 @@ ggplot(df, aes(Date)) +
         ggtitle("Possible External Regressors") + ylab("Scaled Variables")
 ```
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Given that the regressors in the Possible External Regressors plot look correlateed, we might want to include these in the models we test. If we decide to go this "multivariate" route, we can choose one of two approaches. The first approach works if we believe that the other vairbales we believe are correlated with Bankruptcy Rates are not affected by Bankruptcy Rates, but they **do** affect Bankruptcy Rates (i.e exogenous). 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Another possible approach to model and forecast Bankruptcy Rates is we treat the external regressors (variables such as Unemployment Rate or Population) as variables that are affected by Bankruptcy Rates and Bankruptcy Rates are also affected by these external regressors (i.e endogenous variables). For both of these multivariate approaches we need to make sure that certain assumptions about the data and the modeling results are met. The results and discussion of these assumptions will be covered in the Technical Appendix section of this report. 
+
+## One variable/univariate approaches
+
+### Stationary Data
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stationarity in a time series happens when the average values, or the overall variability of the time series are not changing over time. This basically means that we do not see an evident upward or downward trend, that we do not observe seasonality (spikes every July for example), and that we also do not observe large chunks of high volatility in the data. If we have a stationary time series (which the Bankruptcy Rates data does not look stationary), we can employ several methods which include AR, MA, ARMA or single exponential smoothing. If we do not observe stationarity in the data, we can employ mehtods to make this data look stationary, or simply employ methods that break up the seasonal part of the data and the trend part of the data. 
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
 #Final Method Chosen 
 
