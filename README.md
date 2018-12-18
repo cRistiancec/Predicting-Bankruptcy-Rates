@@ -5,7 +5,7 @@ See discussion PDF in `final.pdf`
 
 
 
-#Problem Description
+# Problem Description
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; According to the Office of the Superintendent of Bankruptcy in Canada, "The consumer insolvency rate is defined as the number of consumer insolvencies per thousand residents aged 18 years or above." Bankruptcy rates have gained prevalence and importance sine the 2008 economic downturn since most of the issues arising in that time came from unpaid mortgages and the bundling of sub-prime loans that were unpaid. Being able to accurately predict economic indicators is paramount to understand and prepare for many macro- and micro-economic events. 
 
@@ -20,7 +20,7 @@ See discussion PDF in `final.pdf`
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Knowing that there is an intricate relationship between the indicator we will be trying to predict and several other economic factors, it could be important to analyze other economic indicators. Some of those are given in the train data. These include Unemployment Rate, Population, and the Housing Price Index. 
 
 
-#Methods to Solve Problem
+# Methods to Solve Problem
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The main idea behind the approach to solve the problem of forecasting bankruptcy rates into the future is to exploit the fact that the bankruptcy rate tomorrow is very likely to be similar to that of today. Similarly, we can exploit the fact that the rate today is likely to be very similar to that of yesterday. Furthermore, we can exploit other relationships in the data to gain insights into the future like the fact that bankruptcy rates in July tend to go up or that every January sees a decline in bankruptcy rates. We will now use plots and other metrics to see which are these kinds of relationships in the data and once we extract them, use them to predict into the future. 
 
@@ -58,7 +58,7 @@ See discussion PDF in `final.pdf`
 
 
 
-#Final Method Chosen 
+# Final Method Chosen 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; After looking closely at the available methods to solve this problem, it is clear that the best modeling approach will be to include an external regressor that helps predict movements in bankruptcy rates. Looking back at Figure 2, it looks like unemployment rate can help explain the big dips and large spikes in bankruptcy rates. For example, right after 1990 there is a very significant spike in the unemployment rate. This is followed very closely by a very large spike in the bankruptcy rate starting at the same exact time period. This makes sense from an economic stand point because many of the bankruptcies re cause by people who are unable to pay credit cards or medical bills, so it makes sense that when there is a significant increase in the unemployment rate, bankruptcies will spike since people who are unemployed are less likely to be able to pay their debt. even though it is not a perfect correlation between bankruptcy rates and unemployment rates this will be the best predictor to help account for large spikes and significant decline in the bankruptcy rates. 
 
